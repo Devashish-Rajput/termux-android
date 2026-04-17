@@ -74,8 +74,8 @@ show_banner() {
     echo -e "${CYAN}"
     cat << 'BANNER'
     ╔══════════════════════════════════════╗
-    ║   💻 LENOVO TAB PRO DEV DESKTOP 💻   ║
-    ║        (Optimized for 12GB RAM DeepSeek)      ║
+    ║   💻 LENOVO TAB PRO DEV DESKTOP 💻  ║
+    ║  (Optimized for 12GB RAM DeepSeek)   ║
     ╚══════════════════════════════════════╝
 BANNER
     echo -e "${NC}"
