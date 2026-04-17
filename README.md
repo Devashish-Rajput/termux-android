@@ -8,11 +8,11 @@
 ## 🚀 One-Command Installation
 Open **Termux** and paste this:
 ```bash
-curl -sL https://raw.githubusercontent.com/jarvesusaram99/termux-hacklab/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/Devashish-Rajput/termux-android/main/install.sh | bash
 ```
 **Or using wget:**
 ```bash
-wget -O - https://raw.githubusercontent.com/jarvesusaram99/termux-hacklab/main/install.sh | bash
+wget -O - https://raw.githubusercontent.com/jDevashish-Rajput/termux-android/main/install.sh | bash
 ```
 ---
 ## ✨ Features
