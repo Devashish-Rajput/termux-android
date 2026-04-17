@@ -125,8 +125,8 @@ Pull requests welcome! Feel free to:
 ## 📺 Connect With Me
 | Platform | Link |
 |----------|------|
-| **YouTube** | [@TechJarves](https://youtube.com/@TechJarves) |
-| **GitHub** | [jarvesusaram99](https://github.com/jarvesusaram99) |
+| **YouTube** |  |
+| **GitHub** |  |
 ---
 ## ⭐ Star This Repo!
 If this helped you, please give it a **star** ⭐ - it helps others find this project!
