@@ -143,4 +143,185 @@ step_x11() {
     update_progress
     echo -e "${CYAN}[Step ${CURRENT_STEP}/${TOTAL_STEPS}] Installing Display Server...${NC}"
     install_pkg "termux-x11-nightly" "Termux-X11"
-    install_pkg "xorg-xrand
+    install_pkg "xorg-xrandr" "XRandR"
+    install_pkg "xorg-xrdb" "X Resource Database (For Tablet Scaling)"
+}
+
+step_desktop() {
+    update_progress
+    echo -e "${CYAN}[Step ${CURRENT_STEP}/${TOTAL_STEPS}] Installing Desktop Environment...${NC}"
+    install_pkg "xfce4" "XFCE4 Desktop"
+    install_pkg "xfce4-terminal" "Terminal"
+    install_pkg "thunar" "File Manager"
+}
+
+step_gpu() {
+    update_progress
+    echo -e "${CYAN}[Step ${CURRENT_STEP}/${TOTAL_STEPS}] Installing GPU Drivers...${NC}"
+    install_pkg "mesa-zink" "Mesa Zink"
+    if [ "$GPU_DRIVER" == "freedreno" ]; then
+        install_pkg "mesa-vulkan-icd-freedreno" "Turnip Adreno Driver"
+    else
+        install_pkg "mesa-vulkan-icd-swrast" "Software Renderer"
+    fi
+    install_pkg "vulkan-loader-android" "Vulkan Loader"
+}
+
+step_audio() {
+    update_progress
+    echo -e "${CYAN}[Step ${CURRENT_STEP}/${TOTAL_STEPS}] Installing Audio...${NC}"
+    install_pkg "pulseaudio" "PulseAudio Sound Server"
+}
+
+step_apps() {
+    update_progress
+    echo -e "${CYAN}[Step ${CURRENT_STEP}/${TOTAL_STEPS}] Installing Developer Tools...${NC}"
+    install_pkg "firefox" "Firefox Browser"
+    install_pkg "chromium" "Chromium Browser"
+    install_pkg "code-oss" "VS Code Editor"
+    install_pkg "git" "Git Version Control"
+    install_pkg "curl" "cURL"
+}
+
+step_launchers() {
+    update_progress
+    echo -e "${CYAN}[Step ${CURRENT_STEP}/${TOTAL_STEPS}] Creating Tablet-Optimized Scripts...${NC}"
+    
+    mkdir -p ~/.config
+    cat > ~/.config/desktop-gpu.sh << 'GPUEOF'
+export MESA_NO_ERROR=1
+export MESA_GL_VERSION_OVERRIDE=4.6
+export MESA_GLES_VERSION_OVERRIDE=3.2
+export GALLIUM_DRIVER=zink
+export MESA_LOADER_DRIVER_OVERRIDE=zink
+export TU_DEBUG=noconform
+export MESA_VK_WSI_PRESENT_MODE=immediate
+export ZINK_DESCRIPTORS=lazy
+GPUEOF
+
+    # Create UI Scaling config for High-Res Tablet Screens
+    echo "Xft.dpi: 144" > ~/.Xresources
+    
+    cat > ~/start-desktop.sh << 'LAUNCHEREOF'
+#!/data/data/com.termux/files/usr/bin/bash
+echo ""
+echo "🚀 Starting Lenovo Tab Dev Desktop..."
+echo ""
+
+source ~/.config/desktop-gpu.sh 2>/dev/null
+
+pkill -9 -f "termux.x11" 2>/dev/null
+pkill -9 -f "xfce" 2>/dev/null
+pkill -9 -f "dbus" 2>/dev/null
+
+unset PULSE_SERVER
+pulseaudio --kill 2>/dev/null
+sleep 0.5
+echo "🔊 Starting audio..."
+pulseaudio --start --exit-idle-time=-1
+sleep 1
+pactl load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1 2>/dev/null
+export PULSE_SERVER=127.0.0.1
+
+echo "📺 Starting Display..."
+termux-x11 :0 -ac &
+sleep 3
+
+export DISPLAY=:0
+
+# Apply High-Res Tablet Scaling
+xrdb -merge ~/.Xresources 2>/dev/null
+
+echo "🖥️ Launching Workspace..."
+exec startxfce4
+LAUNCHEREOF
+    chmod +x ~/start-desktop.sh
+    
+    cat > ~/stop-desktop.sh << 'STOPEOF'
+#!/data/data/com.termux/files/usr/bin/bash
+echo "Stopping Desktop..."
+pkill -9 -f "termux.x11" 2>/dev/null
+pkill -9 -f "pulseaudio" 2>/dev/null
+pkill -9 -f "xfce" 2>/dev/null
+pkill -9 -f "dbus" 2>/dev/null
+echo "Desktop stopped."
+STOPEOF
+    chmod +x ~/stop-desktop.sh
+}
+
+step_shortcuts() {
+    update_progress
+    echo -e "${CYAN}[Step ${CURRENT_STEP}/${TOTAL_STEPS}] Creating App Shortcuts...${NC}"
+    
+    mkdir -p ~/Desktop
+    
+    cat > ~/Desktop/Firefox.desktop << 'EOF'
+[Desktop Entry]
+Name=Firefox
+Comment=Web Browser
+Exec=firefox
+Icon=firefox
+Type=Application
+EOF
+
+    cat > ~/Desktop/Chromium.desktop << 'EOF'
+[Desktop Entry]
+Name=Chromium
+Comment=Web Browser
+Exec=chromium --no-sandbox
+Icon=chromium
+Type=Application
+EOF
+    
+    cat > ~/Desktop/VSCode.desktop << 'EOF'
+[Desktop Entry]
+Name=VS Code
+Comment=Code Editor
+Exec=code-oss --no-sandbox
+Icon=code-oss
+Type=Application
+EOF
+    
+    cat > ~/Desktop/Terminal.desktop << 'EOF'
+[Desktop Entry]
+Name=Terminal
+Exec=xfce4-terminal
+Icon=utilities-terminal
+Type=Application
+EOF
+
+    chmod +x ~/Desktop/*.desktop 2>/dev/null
+}
+
+# ============== MAIN EXECUTION ==============
+main() {
+    show_banner
+    echo -e "${WHITE}  This will install a clean Linux developer workspace${NC}"
+    echo -e "${WHITE}  specifically optimized for your Lenovo Tab Pro.${NC}"
+    echo ""
+    echo -e "${YELLOW}  Press Enter to start installation...${NC}"
+    read
+    
+    detect_device
+    step_update
+    step_repos
+    step_x11
+    step_desktop
+    step_gpu
+    step_audio
+    step_apps
+    step_launchers
+    step_shortcuts
+    
+    echo ""
+    echo -e "${GREEN}✅ INSTALLATION COMPLETE! ✅${NC}"
+    echo ""
+    echo -e "${WHITE}🚀 TO START:${NC} ${GREEN}bash ~/start-desktop.sh${NC}"
+    echo -e "${WHITE}🛑 TO STOP:${NC}  ${GREEN}bash ~/stop-desktop.sh${NC}"
+    echo ""
+    echo -e "${CYAN}💡 Note: If Android 12+ forcefully closes the app (Phantom Process Killer),${NC}"
+    echo -e "${CYAN}   you may still need to run the ADB command to disable the process limit.${NC}"
+    echo ""
+}
+
+main
