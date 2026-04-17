@@ -121,8 +121,7 @@ step_update() {
     echo -e "${CYAN}[Step ${CURRENT_STEP}/${TOTAL_STEPS}] Updating system packages...${NC}"
     (pkg update -y >> "$INSTALL_LOG" 2>&1) &
     spinner $! "Updating package lists..."
-    (pkg upgrade -y -o Dpkg::Options::="--force-confnew" >> "$INSTALL_LOG" 2>&1) &
-    spinner $! "Upgrading installed packages..."
+    # Skipped pkg upgrade to prevent Android Phantom Process Killer from crashing Termux
 }
 
 step_repos() {
